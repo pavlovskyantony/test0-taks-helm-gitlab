@@ -19,6 +19,6 @@ spec:
     spec:
       containers:
       - name: nodejs-app
-        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        image: {{ .Values.image.repository }}:{{ .Values.color }}
         ports:
         - containerPort: 3000
