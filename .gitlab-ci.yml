@@ -1,0 +1,56 @@
+stages:
+  - build
+  - push
+  - deploy
+  - switch
+
+variables:
+  DOCKER_IMAGE: dockerhub-username/nodejs-app
+  AWS_REGION: eu-central-1
+  EKS_CLUSTER_NAME: demo-eks-cluster
+
+build:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - echo "Building Docker image..."
+    - docker build -f devspace-quickstart-nodejs/Dockerfile -t $DOCKER_IMAGE:latest .
+  artifacts:
+    paths:
+      - .
+
+push:
+  stage: push
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - echo "Logging in to Docker Hub..."
+    - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+    - docker push $DOCKER_IMAGE:latest
+  only:
+    - main
+
+deploy_blue:
+  stage: deploy
+  image: amazon/aws-cli:latest
+  before_script:
+    - echo "Configuring AWS CLI..."
+    - aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER_NAME
+  script:
+    - echo "Deploying Blue Version..."
+    - helm upgrade --install nodejs-app ./charts/blue-green-app --set image.repository=$DOCKER_IMAGE --set color=blue
+  only:
+    - main
+
+switch_to_green:
+  stage: switch
+  image: amazon/aws-cli:latest
+  script:
+    - echo "Switching to Green Version..."
+    - helm upgrade --install nodejs-app ./charts/blue-green-app --set color=green
+  when: manual
+  only:
+    - main

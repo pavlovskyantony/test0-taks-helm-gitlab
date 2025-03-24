@@ -1,0 +1,11 @@
+---
+appName: nodejs-app
+replicas: 1
+image:
+  repository: dockerhub-username/nodejs-app
+  tag: latest
+
+color: blue
+service:
+  name: nodejs-app-service
+  port: 80
